@@ -196,7 +196,7 @@ for i in range(1200):
             y -= 0.5
         x -= random.randint(2, 5)
         sobaka(x, y, 1)
-    if x > 550 or x < 70:
+    if n % 50 == 0 and (x > 550 or x < 70):
         povorot += 1
         beg += 1
     if y > 700 or y < 300:
