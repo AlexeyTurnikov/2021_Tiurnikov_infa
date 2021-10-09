@@ -1,5 +1,6 @@
 import pygame
 import pygame.draw as draw
+import random
 from random import randint
 
 pygame.init()
@@ -53,18 +54,18 @@ def ball(x_ball, y_ball, r_ball, color_ball):
 
 def movement(number, velocity):
     """
-    Функция, отвечающая за определение направления движения шарика
+    Функция, отвечающая за определение направления движения шарика и скорость его движения
     :param number: Порядковый номер шарика
-    :param velocity: Скорость шарика
+    :param velocity: Максимальная скорость шарика
     """
     if leftrightmovement[number] % 2 == 0:
-        x[number] += velocity
+        x[number] += random.uniform(3*velocity/4,velocity)
     if leftrightmovement[number] % 2 == 1:
-        x[number] -= velocity
+        x[number] -= random.uniform(3*velocity/4,velocity)
     if updownmovement[number] % 2 == 0:
-        y[number] += velocity
+        y[number] += random.uniform(3*velocity/4,velocity)
     if updownmovement[number] % 2 == 1:
-        y[number] -= velocity
+        y[number] -= random.uniform(3*velocity/4,velocity)
     if x[number] >= 1050 or x[number] <= 50:
         leftrightmovement[number] += 1
     if y[number] >= 750 or y[number] <= 50:
@@ -120,7 +121,7 @@ while not finished:
         time[i] += 1
         score += click()
         ball(x[i], y[i], r[i], WHITE)
-        movement(i, 0.5)
+        movement(i, 7)
 
         if time[i] % 600 == 0:
             r[i] = old_r[i]
