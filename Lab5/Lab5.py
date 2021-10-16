@@ -7,7 +7,7 @@ Width = 1100
 Height = 700
 screen = pygame.display.set_mode((Width, Height))
 finished = False
-score = 29
+score = 0
 time = 0
 
 WHITE = (255, 255, 255)
@@ -93,9 +93,9 @@ def click(nanny_come=False):
 
 def back():
     """
-    Возвращает по одному убитому смешарику обратно на экран каждые 45 итераций.
+    Возвращает по одному убитому смешарику обратно на экран каждые 10 итераций.
     """
-    if len(family_must_back) > 0 and time % 25 == 0:
+    if len(family_must_back) > 0 and time % 10 == 0:
         family_massive.append(
             Ball(randint(100, Width), randint(100, Height), SMESHARIKI_SURF[family_must_back[0]], family))
         family_must_back.remove(family_must_back[0])
