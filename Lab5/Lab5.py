@@ -1,5 +1,6 @@
 import pygame
 from random import randint
+import time as t
 
 pygame.init()
 
@@ -9,6 +10,7 @@ screen = pygame.display.set_mode((Width, Height))
 finished = False
 score = 0
 time = 0
+timer_start = t.perf_counter()
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -21,6 +23,62 @@ SMESHARIKI = ["Kopatych.png", "Sovynja.png", "Nyusha.png", "Losyash.png", "Ezhik
               "Krosh.png",
               "Karkarych.png"]
 SMESHARIKI_SURF = []
+
+username = str(input("Пожалуйста, введите ваше имя: "))
+names = []
+wins = []
+loses = []
+
+
+def leaderboard():
+    """
+    Функция, занимающаяся таблицей лидеров
+    :return: line_counter - строку, на которой находится имя пользователя, wins - массив с победами пользователей.
+    """
+    line_number = 1
+    with open("Leaderboard.txt", "r") as file:
+        for line in file.readlines():
+            line = line.rstrip()
+            if line_number % 3 == 1:
+                names.append(line)
+                line_number += 1
+                continue
+            if line_number % 3 == 2:
+                line = line.split("Wins: ")
+                wins.append(int(line[1]))
+                line_number += 1
+                continue
+            if line_number % 3 == 0:
+                line = line.split("Loses: ")
+                loses.append(int(line[1]))
+                line_number += 1
+                continue
+    line_counter = 1
+    for playername in names:
+        if username != playername:
+            line_counter += 1
+        if username == playername:
+            if score >= 30:
+                wins[line_counter - 1] += 1
+                break
+            if score <= 0:
+                loses[line_counter - 1] += 1
+                break
+
+    with open("Leaderboard.txt", "w") as file:
+        for i in range(len(names)):
+            file.write(names[i] + "\n")
+            file.write("Wins: " + str(wins[i]) + "\n")
+            file.write("Loses: " + str(loses[i]) + "\n")
+        if line_counter > len(names):
+            file.write(username + "\n")
+            if score >= 30:
+                file.write("Wins: " + str(1) + "\n")
+                file.write("Loses: " + str(0) + "\n")
+            if score <= 0:
+                file.write("Wins: " + str(0) + "\n")
+                file.write("Loses: " + str(1) + "\n")
+    return wins, line_counter
 
 
 def background(background_number):
@@ -67,6 +125,11 @@ def text(count, condition):
         place2 = words2.get_rect(center=(550, 650))
         screen.blit(words1, place1)
         screen.blit(words2, place2)
+    if condition == 2:
+        font = pygame.font.SysFont('Arial', 80)
+        words = font.render("Ух-ты, Вы топовый игрок", True, (0, 0, 0))
+        place = words.get_rect(center=(500, 75))
+        screen.blit(words, place)
 
 
 def click(nanny_come=False):
@@ -260,8 +323,11 @@ while 0 < score < 30:  # Появление ЖЕЛЕЗНОЙ НЯНИ
 
 time = 0
 
+wins, line_counter = leaderboard()
 if score <= 0:
     while not finished:  # Проигрыш
+        if wins[line_counter - 1] == max(wins) and wins[line_counter - 1] == max(wins):
+            text(score, 2)
         time += 1
         background(3)
         text(score, -1)
@@ -277,10 +343,14 @@ if score >= 30:
         time += 1
         background(4)
         text(score, 1)
+        if line_counter != len(wins) and wins[line_counter - 1] == max(wins):
+                text(score, 2)
         pygame.display.update()
         if time % 500 == 0:
             finished = True
         for something in pygame.event.get():
             if something.type == pygame.QUIT:
                 finished = True
+timer_end = t.perf_counter()
+
 pygame.quit()
