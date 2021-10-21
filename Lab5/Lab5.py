@@ -1,6 +1,5 @@
 import pygame
 from random import randint
-import time as t
 
 username = str(input("Пожалуйста, введите ваше имя: "))
 pygame.init()
@@ -9,9 +8,8 @@ Width = 1100
 Height = 700
 screen = pygame.display.set_mode((Width, Height))
 finished = False
-score = 30
+score = 0
 time = 0
-timer_start = t.perf_counter()
 
 WHITE = (255, 255, 255)
 BLACK = (0, 0, 0)
@@ -24,7 +22,6 @@ SMESHARIKI = ["Kopatych.png", "Sovynja.png", "Nyusha.png", "Losyash.png", "Ezhik
               "Krosh.png",
               "Karkarych.png"]
 SMESHARIKI_SURF = []
-
 
 names = []
 wins = []
@@ -315,9 +312,9 @@ for i in range(len(SMESHARIKI)):
 nanny = Nanny(550, 400)
 nanny.add(nanny_group)
 
-while score < 20:  # начало игры
+
+while score < 20 and finished is False:  # Начало игры
     background(1)
-    time += 1
     family.draw(screen)
     family.update()
     text(score, 0)
@@ -327,11 +324,11 @@ while score < 20:  # начало игры
     pygame.display.update()
     for something in pygame.event.get():
         if something.type == pygame.QUIT:
-            pygame.quit()
+            finished = True
 
-while 0 < score < 30:  # Появление ЖЕЛЕЗНОЙ НЯНИ
+while 0 < score < 30 and finished is False:  # Появление ЖЕЛЕЗНОЙ НЯНИ
     background(2)
-    time += 1
+
     family.draw(screen)
     family.update()
 
@@ -346,7 +343,7 @@ while 0 < score < 30:  # Появление ЖЕЛЕЗНОЙ НЯНИ
     pygame.display.update()
     for something in pygame.event.get():
         if something.type == pygame.QUIT:
-            pygame.quit()
+            finished = True
 
 time = 0
 
@@ -378,6 +375,5 @@ if score >= 30:
         for something in pygame.event.get():
             if something.type == pygame.QUIT:
                 finished = True
-timer_end = t.perf_counter()
 
 pygame.quit()

@@ -5,8 +5,8 @@ Loses: 3
 Wins: 0
 Loses: 3
 Алексей
-Wins: 43
-Loses: 14
+Wins: 44
+Loses: 16
 Вася
 Wins: 2
 Loses: 6
