@@ -1,0 +1,48 @@
+Иван Петрович
+Wins: 0
+Loses: 3
+Петр Иванович
+Wins: 0
+Loses: 3
+Алексей
+Wins: 43
+Loses: 14
+Вася
+Wins: 2
+Loses: 6
+Петя
+Wins: 1
+Loses: 1
+Вика
+Wins: 2
+Loses: 3
+Александр
+Wins: 0
+Loses: 2
+Лев
+Wins: 2
+Loses: 0
+Иван Сергеевич
+Wins: 2
+Loses: 0
+Дмитрий
+Wins: 2
+Loses: 0
+Иван
+Wins: 1
+Loses: 0
+Саша
+Wins: 0
+Loses: 1
+Владимир Владимирович
+Wins: 0
+Loses: 1
+Владислав
+Wins: 0
+Loses: 1
+Антон
+Wins: 0
+Loses: 1
+Кирилл
+Wins: 2
+Loses: 0

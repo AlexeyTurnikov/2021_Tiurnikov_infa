@@ -2,13 +2,14 @@ import pygame
 from random import randint
 import time as t
 
+username = str(input("Пожалуйста, введите ваше имя: "))
 pygame.init()
 
 Width = 1100
 Height = 700
 screen = pygame.display.set_mode((Width, Height))
 finished = False
-score = 0
+score = 30
 time = 0
 timer_start = t.perf_counter()
 
@@ -24,16 +25,16 @@ SMESHARIKI = ["Kopatych.png", "Sovynja.png", "Nyusha.png", "Losyash.png", "Ezhik
               "Karkarych.png"]
 SMESHARIKI_SURF = []
 
-username = str(input("Пожалуйста, введите ваше имя: "))
+
 names = []
 wins = []
 loses = []
 
 
-def leaderboard():
+def start_leaderboard():
     """
-    Функция, занимающаяся таблицей лидеров
-    :return: line_counter - строку, на которой находится имя пользователя, wins - массив с победами пользователей.
+    Функция, записывающая данные из файла в массивы.
+
     """
     line_number = 1
     with open("Leaderboard.txt", "r") as file:
@@ -53,24 +54,20 @@ def leaderboard():
                 loses.append(int(line[1]))
                 line_number += 1
                 continue
-    line_counter = 1
-    for playername in names:
-        if username != playername:
-            line_counter += 1
-        if username == playername:
-            if score >= 30:
-                wins[line_counter - 1] += 1
-                break
-            if score <= 0:
-                loses[line_counter - 1] += 1
-                break
 
+
+def end_leaderboard(line):
+    """
+    Функция, записывающая данные из массивов в файл.
+    :param line: линия на которой находится имя игрока.
+
+    """
     with open("Leaderboard.txt", "w") as file:
-        for i in range(len(names)):
-            file.write(names[i] + "\n")
-            file.write("Wins: " + str(wins[i]) + "\n")
-            file.write("Loses: " + str(loses[i]) + "\n")
-        if line_counter > len(names):
+        for j in range(len(names)):
+            file.write(names[j] + "\n")
+            file.write("Wins: " + str(wins[j]) + "\n")
+            file.write("Loses: " + str(loses[j]) + "\n")
+        if line > len(names):
             file.write(username + "\n")
             if score >= 30:
                 file.write("Wins: " + str(1) + "\n")
@@ -78,7 +75,37 @@ def leaderboard():
             if score <= 0:
                 file.write("Wins: " + str(0) + "\n")
                 file.write("Loses: " + str(1) + "\n")
-    return wins, line_counter
+
+
+def leaderboard():
+    """
+    Функция, занимающаяся таблицей лидеров
+    :return: line_number - строку, на которой находится имя пользователя, wins - массив с победами пользователей.
+    """
+    start_leaderboard()
+    line_number = 1
+    for playername in names:
+        if username != playername:
+            line_number += 1
+        if username == playername:
+            if score >= 30:
+                wins[line_number - 1] += 1
+                break
+            if score <= 0:
+                loses[line_number - 1] += 1
+                break
+    if line_number <= len(names):
+        print("Ваши победы: " + str(wins[line_number - 1]) + "\n")
+        print("Ваши поражения: " + str(loses[line_number - 1]) + "\n")
+    if line_number > len(names):
+        if score >= 30:
+            print("Ваши победы: " + str(1) + "\n")
+            print("Ваши поражения: " + str(0) + "\n")
+        if score <= 0:
+            print("Ваши победы: " + str(0) + "\n")
+            print("Ваши поражения: " + str(1) + "\n")
+    end_leaderboard(line_number)
+    return wins, line_number
 
 
 def background(background_number):
@@ -326,7 +353,7 @@ time = 0
 wins, line_counter = leaderboard()
 if score <= 0:
     while not finished:  # Проигрыш
-        if wins[line_counter - 1] == max(wins) and wins[line_counter - 1] == max(wins):
+        if wins[line_counter - 2] == max(wins):
             text(score, 2)
         time += 1
         background(3)
@@ -343,8 +370,8 @@ if score >= 30:
         time += 1
         background(4)
         text(score, 1)
-        if line_counter != len(wins) and wins[line_counter - 1] == max(wins):
-                text(score, 2)
+        if line_counter != len(wins) + 1 and wins[line_counter - 1] == max(wins):
+            text(score, 2)
         pygame.display.update()
         if time % 500 == 0:
             finished = True
