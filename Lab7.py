@@ -144,7 +144,7 @@ class Gun:
     def draw(self):
         gun_screen = pygame.Surface((self.width, 2*self.height))
         gun_screen.set_colorkey(BLACK)
-        pygame.draw.rect(gun_screen, self.color, (0, self.height/2, self.width, self.height))
+        pygame.draw.rect(gun_screen, self.color, (0, int(self.height/2), self.width, self.height))
 
         rotated_gun_screen = pygame.transform.rotate(gun_screen, 180 - self.an * 57.7)
         new_rect = rotated_gun_screen.get_rect(center=gun_screen.get_rect(topleft=(20, 450)).center)
