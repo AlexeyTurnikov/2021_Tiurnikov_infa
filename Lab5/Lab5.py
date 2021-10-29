@@ -193,6 +193,7 @@ class Ball(pygame.sprite.Sprite):
     Класс создающий смешариков
     """
 
+
     def __init__(self, x, y, surf, group):
         pygame.sprite.Sprite.__init__(self)
         number = 0

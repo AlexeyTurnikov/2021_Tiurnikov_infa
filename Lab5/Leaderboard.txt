@@ -46,3 +46,12 @@ Loses: 1
 Кирилл
 Wins: 2
 Loses: 0
+Ярослав
+Wins: 0
+Loses: 1
+Аддада
+Wins: 1
+Loses: 0
+Асма мастер
+Wins: 0
+Loses: 1

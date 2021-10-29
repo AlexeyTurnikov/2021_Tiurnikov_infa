@@ -17,38 +17,41 @@ GAME_COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
 WIDTH = 800
 HEIGHT = 600
-points = 0
-time_text = 0
+points = 15
 old_bullet = 0
 bullet = 0
 balls = []
+targets = []
+bombs = []
+quit_game = 0
 
-
-def text(time):
+def text():
     """
     Функция, отвечающая за текущий счет и уведомление об уничтожении цели.
-    :param time: текущее время существования уведомления об уничтожении цели.
-    :return: time: текущее время существования уведомления об уничтожении цели, увеличенное на 1.
     """
-    font1 = pygame.font.SysFont('Arial', 80)
-    words1 = font1.render(str(points), True, (0, 0, 0))
-    place1 = words1.get_rect(center=(75, 100))
+    font1 = pygame.font.SysFont('Arial', 16)
+    font2 = pygame.font.SysFont('Arial', 32)
+    words1 = font1.render("Оставшиеся снаряды: ", True, (0, 0, 0))
+    place1 = words1.get_rect(center=(100, 100))
     screen.blit(words1, place1)
-    if 0 < time < 50:
-        time += 1
-        font2 = pygame.font.SysFont('Arial', 32)
-        words2 = font2.render("Вы уничтожили цель за " + str(old_bullet) + " выстрелов.", True, (0, 0, 0))
-        place2 = words2.get_rect(center=(400, 200))
-        screen.blit(words2, place2)
+    words2 = font2.render(str(points), True, (0,0,0))
+    place2 = words2.get_rect(center=(100,132))
+    screen.blit(words2,place2)
 
-    else:
-        time = 0
+def lose_text():
+    font = pygame.font.SysFont('Arial', 32)
+    words = font.render("Вы проиграли", True, (0, 0, 0))
+    place = words.get_rect(center=(WIDTH/2, HEIGHT/2))
+    screen.blit(words, place)
 
-    return time
-
+def win_text():
+    font = pygame.font.SysFont('Arial', 32)
+    words = font.render("Вы выиграли", True, (0, 0, 0))
+    place = words.get_rect(center=(WIDTH/2, HEIGHT/2))
+    screen.blit(words, place)
 
 class Ball:
-    def __init__(self, screen_ball: pygame.Surface, x=40, y=450):
+    def __init__(self, screen_ball: pygame.Surface, x=40, y=450, live_time=75):
         """ Конструктор класса ball
         Args:
         x - начальное положение мяча по горизонтали
@@ -63,6 +66,7 @@ class Ball:
         self.color = random.choice(GAME_COLORS)
         self.live = 0
         self.t = 0
+        self.live_time = live_time + random.randint(-3, 3)
 
     def move(self):
         """Переместить мяч по прошествии единицы времени.
@@ -104,8 +108,10 @@ class Ball:
             (self.x, self.y),
             self.r
         )
-        if self.live >= 75:
+        if self.live >= self.live_time:
             self.r = 0
+            self.x = 1000
+            self.y = 1000
 
     def hittest(self, obj):
         """Функция проверяет сталкивалкивается ли данный обьект с целью, описываемой в обьекте obj.
@@ -125,15 +131,20 @@ class Gun:
     """
     Класс, отвечающий за пушку.
     """
-    def __init__(self, screen_gun):
-        self.screen = screen_gun
-        self.f2_power = 25
+
+    def __init__(self, x=20, y=500):
+        self.screen = screen
+        self.f2_power = 75
         self.f2_on = 0
         self.an = 1
         self.color = GREY
-        self.width = 20
-        self.height = 5
+        self.width = 40
+        self.height = 10
         self.growth = 0
+        self.x = x
+        self.y = y
+        self.left = 0
+        self.right = 0
 
     def fire2_start(self):
         """
@@ -150,14 +161,14 @@ class Gun:
         """
 
         extrabullet += 1
-        new_ball = Ball(screen)
-        new_ball.r += 5
+        new_ball = Ball(screen, self.x, self.y)
+        new_ball.r += 10
         self.an = math.atan2((event_gun.pos[1] - new_ball.y), (event_gun.pos[0] - new_ball.x))
         new_ball.vx = self.f2_power * math.cos(self.an)
         new_ball.vy = - self.f2_power * math.sin(self.an)
         extraballs.append(new_ball)
         self.f2_on = 0
-        self.f2_power = 25
+        self.f2_power = 75
         return extraballs, extrabullet
 
     def targetting(self, event_target):
@@ -165,10 +176,10 @@ class Gun:
         Прицеливание. Зависит от положения мыши.
         """
 
-        if event_target.pos[0] == 20:
-            self.an = math.atan(event_target.pos[1] - 450)
+        if event_target.pos[0] == self.x:
+            self.an = math.atan(event_target.pos[1] - self.y)
         else:
-            self.an = math.atan((event_target.pos[1] - 450) / (event_target.pos[0] - 20))
+            self.an = math.atan((event_target.pos[1] - self.y) / (event_target.pos[0] - self.x))
 
         if self.f2_on:
             self.color = RED
@@ -181,51 +192,104 @@ class Gun:
         Функция, отвечающая за правильную прорисовку пушки, ее поворот в зависимости от курсора
         Максимальные размеры пушки (100,13)
         """
-        if gun.growth == 1 and self.width < 100 and self.height < 13:
+        if self.growth == 1 and self.width < 100 and self.height < 16:
             self.width += 1
             self.height += 0.1
-        elif gun.growth == 1:
+        elif self.growth == 1:
             self.width = 100
-            self.height = 13
-        if gun.growth == 0:
-            self.width = 20
-            self.height = 5
+            self.height = 16
+        if self.growth == 0:
+            self.width = 40
+            self.height = 10
         gun_screen = pygame.Surface((self.width, 2 * self.height))
         gun_screen.set_colorkey(BLACK)
         pygame.draw.rect(gun_screen, self.color, (0, int(self.height / 2), self.width, self.height))
-
+        pygame.draw.circle(gun_screen, GREEN, (self.width - 10, self.height), self.width/3 + 2)
         rotated_gun_screen = pygame.transform.rotate(gun_screen, 180 - self.an * 57.7)
-        new_rect = rotated_gun_screen.get_rect(center=gun_screen.get_rect(topleft=(20, 450)).center)
+        new_rect = rotated_gun_screen.get_rect(center=gun_screen.get_rect(topleft=(self.x, self.y)).center)
         screen.blit(rotated_gun_screen, new_rect.topleft)
 
     def power_up(self):
         """
         Функция, отвечающая за силу выстрела в зависимости от продолжительности нажатия.
+
         """
         if self.f2_on:
-            if self.f2_power < 100:
+            if self.f2_power < 150:
                 self.f2_power += 1
             self.color = RED
         else:
             self.color = GREY
+
+    def move(self, event_move):
+        if event_move.type == pygame.KEYDOWN:
+            if event_move.key == pygame.K_LEFT:
+                self.left = 1
+            if event_move.key == pygame.K_RIGHT:
+                self.right = 1
+        if event_move.type == pygame.KEYUP:
+            if event_move.key == pygame.K_LEFT:
+                self.left = 0
+            if event_move.key == pygame.K_RIGHT:
+                self.right = 0
+        if self.left == 1:
+            self.x -= 1
+        if self.right == 1:
+            self.x += 1
+
+
+class AntiAirGun(Gun):
+    def __init__(self, x=20, y=500):
+        super().__init__(x, y)
+        self.f2_power = 50
+
+    # anti-air-gun = aag
+    def draw(self):
+
+        aag_screen = pygame.Surface((self.width, 2 * self.height))
+        aag_screen.set_colorkey(BLACK)
+        pygame.draw.rect(aag_screen, self.color, (0, int(self.height / 2), self.width, self.height))
+        pygame.draw.circle(aag_screen, GREEN, (self.width - 10, self.height), 12)
+        rotated_aag_screen = pygame.transform.rotate(aag_screen, 180 - self.an * 57.7)
+        new_rect = rotated_aag_screen.get_rect(center=aag_screen.get_rect(topleft=(self.x, self.y)).center)
+        screen.blit(rotated_aag_screen, new_rect.topleft)
+
+    def fire2_end(self, event_gun, extraballs, extrabullet):
+        """Выстрел мячом.
+        Происходит при отпускании кнопки мыши.
+        Начальные значения компонент скорости мяча vx и vy зависят от положения мыши.
+        return: extraballs - измененный массив с мячами, которые вылетели из пушки.
+                extrabullet - количество залпов на данный момент.
+        """
+
+        extrabullet += 1
+        for i in range(10):
+            new_ball = Ball(screen, self.x + random.randint(-2, 2), self.y + random.randint(-10, 10), 5)
+            self.an = math.atan2((event_gun.pos[1] - new_ball.y), (event_gun.pos[0] - new_ball.x))
+            new_ball.vx = self.f2_power * math.cos(self.an) * random.randint(1, 3)
+            new_ball.vy = - self.f2_power * math.sin(self.an) * random.randint(1, 3)
+            extraballs.append(new_ball)
+        self.f2_on = 0
+        self.f2_power = 50
+        return extraballs, extrabullet
 
 
 class Target:
     """
     Класс, отвечающий за цели и их поведение.
     """
+
     def __init__(self):
         self.points = 0
         self.live = 1
-        self.x = 500
-        self.y = 500
-        self.r = 10
-        self.speed = random.randint(1, 5)
+        self.x = random.randint(300, 700)
+        self.y = random.randint(100, 475)
+        self.r = random.randint(5, 50)
+        self.color = random.choice(GAME_COLORS)
+        self.speed = random.randint(1, 10)
         self.leftrightmovement = random.randint(0, 1)
         self.updownmovement = random.randint(0, 1)
         self.i = 0
-        self.color = RED
-        self.new_target()
 
     def new_target(self):
         """ Инициализация новой цели. """
@@ -240,7 +304,7 @@ class Target:
         """
         pygame.draw.circle(screen, self.color, (self.x, self.y), self.r)
         if self.i % 15 == 0:
-            if self.x <= 400 or self.x >= WIDTH - 50:
+            if self.x <= 100 or self.x >= WIDTH - 50:
                 self.leftrightmovement += 1
             if self.y <= 50 or self.y >= HEIGHT - 120:
                 self.updownmovement += 1
@@ -255,55 +319,130 @@ class Target:
         self.i += 1
 
 
+class Bomb(Target):
+    def __init__(self, x, y):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.image_bomb = pygame.image.load("bomb.png")
+        self.rect_bomb = self.image_bomb.get_rect(center=(self.x, self.y))
+
+    def move(self):
+        self.y += self.speed
+        screen.blit(self.image_bomb, (self.x, self.y))
+
+    def boom(self):
+        self.live = 0
+        bomb_ball = Ball(screen, self.x, self.y, 3)
+        bomb_ball.r += 70
+        bomb_ball.color = BLACK
+        balls.append(bomb_ball)
+        self.x += 1000
+
+
+class Minion(Target):
+    def __init__(self, x=random.randint(100, 700), y=50):
+        super().__init__()
+        self.x = x
+        self.y = y
+        self.image_minion = pygame.image.load("minion.jpg")
+        self.rect_minion = self.image_minion.get_rect(center=(self.x, self.y))
+        self.image_minion.set_colorkey(WHITE)
+
+    def move(self):
+        if self.i % 15 == 0:
+            if self.x <= 25 or self.x >= WIDTH - 125:
+                self.leftrightmovement += 1
+        if self.leftrightmovement % 2 == 0:
+            self.x += self.speed
+        if self.leftrightmovement % 2 == 1:
+            self.x -= self.speed
+        self.i += 1
+        screen.blit(self.image_minion, (self.x, self.y))
+
+    def spawn(self):
+        bomb = Bomb(self.x, self.y + 10)
+        bombs.append(bomb)
+
+
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
-
+pygame.time.set_timer(pygame.USEREVENT, 10)
+pygame.time.set_timer(pygame.USEREVENT + 1, 5000)
 clock = pygame.time.Clock()
-gun = Gun(screen)
-target1 = Target()
-target2 = Target()
-target1.new_target()
-target2.new_target()
+tank = AntiAirGun()
+minion = Minion()
+for amount_of_targets in range(15):
+    target = Target()
+    targets.append(target)
 
 finished = False
 
 while not finished:
     screen.fill(WHITE)
-    gun.draw()
-    target1.move()
-    target2.move()
-    time_text = text(time_text)
+    text()
+    tank.draw()
+    minion.move()
+    for bomber in bombs:
+        bomber.move()
     for ball in balls:
         ball.draw()
+    for target in targets:
+        target.move()
     pygame.display.update()
     clock.tick(FPS)
-
+    if points <= 0:
+        finished = True
     for event in pygame.event.get():
+        tank.move(event)
+        if event.type == pygame.USEREVENT + 1:
+            minion.spawn()
         if event.type == pygame.QUIT:
             finished = True
+            quit_game = 1
+        if event.type == pygame.KEYUP:
+            if event.key == pygame.K_SPACE:
+                if isinstance(tank, Gun) and not isinstance(tank, AntiAirGun):
+                    tank = AntiAirGun(tank.x, tank.y)
+                else:
+                    tank = Gun(tank.x, tank.y)
         elif event.type == pygame.MOUSEBUTTONDOWN:
-            gun.fire2_start()
-            gun.growth = 1
+            tank.fire2_start()
+            tank.growth = 1
         elif event.type == pygame.MOUSEBUTTONUP:
-            balls, bullet = gun.fire2_end(event, balls, bullet)
-            gun.growth = 0
+            balls, bullet = tank.fire2_end(event, balls, bullet)
+            points -= 2
+            tank.growth = 0
         elif event.type == pygame.MOUSEMOTION:
-            gun.targetting(event)
+            tank.targetting(event)
 
     for ball in balls:
         ball.move()
-        if ball.hittest(target1) or ball.hittest(target2):
-            time_text = 1
-            old_bullet = bullet
-            bullet = 0
-            points += 1
-            if ball.hittest(target1):
-                target1.new_target()
-                target1.live = 0
-            if ball.hittest(target2):
-                target2.new_target()
-                target2.live = 0
-
-    gun.power_up()
+        for target in targets:
+            if ball.hittest(target):
+                old_bullet = bullet
+                bullet = 0
+                points += 1
+                target.new_target()
+                target.live = 0
+        for bomber in bombs:
+            if ball.hittest(bomber):
+                old_bullet = bullet
+                bullet = 0
+                points += 10
+                bomber.boom()
+    tank.power_up()
+finished = False
+if quit_game != 1:
+    screen.fill(WHITE)
+    while not finished:
+        if points <= 0:
+            lose_text()
+        if points >= 50:
+            win_text()
+        pygame.display.update()
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                finished = True
 
 pygame.quit()
