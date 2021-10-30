@@ -13,6 +13,8 @@ CYAN = 0x00FFCC
 BLACK = (0, 0, 0)
 WHITE = 0xFFFFFF
 GREY = 0x7D7D7D
+DARKGREY = (20, 20, 20)
+DARKGREEN = (40, 70, 45)
 GAME_COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
 WIDTH = 800
@@ -25,6 +27,7 @@ targets = []
 bombs = []
 quit_game = 0
 
+
 def text():
     """
     Функция, отвечающая за текущий счет и уведомление об уничтожении цели.
@@ -34,21 +37,24 @@ def text():
     words1 = font1.render("Оставшиеся снаряды: ", True, (0, 0, 0))
     place1 = words1.get_rect(center=(100, 100))
     screen.blit(words1, place1)
-    words2 = font2.render(str(points), True, (0,0,0))
-    place2 = words2.get_rect(center=(100,132))
-    screen.blit(words2,place2)
+    words2 = font2.render(str(points), True, (0, 0, 0))
+    place2 = words2.get_rect(center=(100, 132))
+    screen.blit(words2, place2)
+
 
 def lose_text():
     font = pygame.font.SysFont('Arial', 32)
     words = font.render("Вы проиграли", True, (0, 0, 0))
-    place = words.get_rect(center=(WIDTH/2, HEIGHT/2))
+    place = words.get_rect(center=(WIDTH / 2, HEIGHT / 2))
     screen.blit(words, place)
+
 
 def win_text():
     font = pygame.font.SysFont('Arial', 32)
     words = font.render("Вы выиграли", True, (0, 0, 0))
-    place = words.get_rect(center=(WIDTH/2, HEIGHT/2))
+    place = words.get_rect(center=(WIDTH / 2, HEIGHT / 2))
     screen.blit(words, place)
+
 
 class Ball:
     def __init__(self, screen_ball: pygame.Surface, x=40, y=450, live_time=75):
@@ -102,12 +108,7 @@ class Ball:
             self.vx = -self.vx / 2
 
     def draw(self):
-        pygame.draw.circle(
-            self.screen,
-            self.color,
-            (self.x, self.y),
-            self.r
-        )
+        pygame.draw.circle(self.screen, self.color, (self.x, self.y), self.r)
         if self.live >= self.live_time:
             self.r = 0
             self.x = 1000
@@ -121,7 +122,6 @@ class Ball:
             Возвращает True в случае столкновения мяча и цели. В противном случае возвращает False.
         """
         if (obj.x - self.x) ** 2 + (obj.y - self.y) ** 2 <= (obj.r + self.r) ** 2:
-
             return True
         else:
             return False
@@ -132,14 +132,13 @@ class Gun:
     Класс, отвечающий за пушку.
     """
 
-    def __init__(self, x=20, y=500):
+    def __init__(self, x=20, y=530):
         self.screen = screen
         self.f2_power = 75
         self.f2_on = 0
-        self.an = 1
-        self.color = GREY
-        self.width = 40
-        self.height = 10
+        self.angle = 1
+        self.width = 100
+        self.height = 100
         self.growth = 0
         self.x = x
         self.y = y
@@ -161,51 +160,65 @@ class Gun:
         """
 
         extrabullet += 1
-        new_ball = Ball(screen, self.x, self.y)
+        new_ball = Ball(screen, int(self.x + self.width / 2), int(self.y + self.height / 2), 30)
         new_ball.r += 10
-        self.an = math.atan2((event_gun.pos[1] - new_ball.y), (event_gun.pos[0] - new_ball.x))
-        new_ball.vx = self.f2_power * math.cos(self.an)
-        new_ball.vy = - self.f2_power * math.sin(self.an)
+        self.angle = math.atan2((event_gun.pos[1] - new_ball.y), (event_gun.pos[0] - new_ball.x))
+        new_ball.vx = self.f2_power * math.cos(self.angle)
+        new_ball.vy = - self.f2_power * math.sin(self.angle)
         extraballs.append(new_ball)
         self.f2_on = 0
         self.f2_power = 75
         return extraballs, extrabullet
 
-    def targetting(self, event_target):
+    def targeting(self, event_target):
         """
         Прицеливание. Зависит от положения мыши.
         """
 
-        if event_target.pos[0] == self.x:
-            self.an = math.atan(event_target.pos[1] - self.y)
+        if event_target.pos[0] == self.x + self.width / 2:
+            self.angle = math.atan(event_target.pos[1] - (self.y + self.height / 2))
         else:
-            self.an = math.atan((event_target.pos[1] - self.y) / (event_target.pos[0] - self.x))
+            self.angle = math.atan(
+                (event_target.pos[1] - (self.y + self.height / 2)) / (event_target.pos[0] - (self.x + self.width / 2)))
 
-        if self.f2_on:
-            self.color = RED
-
-        else:
-            self.color = GREY
+    def _gun_tower(self, tower_screen):
+        pygame.draw.rect(tower_screen, GREY, (int(self.width / 2), 0, int(self.width / 10), int(self.height / 2)))
+        pygame.draw.rect(tower_screen, GREY,
+                         (int(self.width / 2) - int(self.width / 10), 0, int(self.width / 10), int(self.height / 2)))
+        pygame.draw.polygon(tower_screen, DARKGREY,
+                            [(int(self.width / 2 - 2 * self.width / 10), 0), (int(self.width / 2 - self.width / 10), 0),
+                             (int(self.width / 2 - self.width / 10), int(self.height / 10))])
+        pygame.draw.polygon(tower_screen, DARKGREY,
+                            [(int(self.width / 2 + 2 * self.width / 10), 0), (int(self.width / 2 + self.width / 10), 0),
+                             (int(self.width / 2 + self.width / 10), int(self.height / 10))])
+        pygame.draw.circle(tower_screen, DARKGREEN, (int(self.width / 2), int(self.height / 2)),
+                           int((self.height + self.width) / 10))
+        pygame.draw.rect(tower_screen, DARKGREEN, (
+            int(self.width / 2 - (self.height + self.width) / 10), int(self.height / 2),
+            int(2 * (self.height + self.width) / 10),
+            int((self.width + self.height) / 10)))
 
     def draw(self):
         """
         Функция, отвечающая за правильную прорисовку пушки, ее поворот в зависимости от курсора
-        Максимальные размеры пушки (100,13)
+        Максимальные размеры пушки (200,200)
         """
-        if self.growth == 1 and self.width < 100 and self.height < 16:
+        if self.growth == 1 and self.width < 200 and self.height < 200:
             self.width += 1
-            self.height += 0.1
+            self.height += 1
         elif self.growth == 1:
-            self.width = 100
-            self.height = 16
+            self.width = 200
+            self.height = 200
         if self.growth == 0:
-            self.width = 40
-            self.height = 10
-        gun_screen = pygame.Surface((self.width, 2 * self.height))
+            self.width = 100
+            self.height = 100
+        gun_screen = pygame.Surface((self.width, self.height))
         gun_screen.set_colorkey(BLACK)
-        pygame.draw.rect(gun_screen, self.color, (0, int(self.height / 2), self.width, self.height))
-        pygame.draw.circle(gun_screen, GREEN, (self.width - 10, self.height), self.width/3 + 2)
-        rotated_gun_screen = pygame.transform.rotate(gun_screen, 180 - self.an * 57.7)
+        self._gun_tower(gun_screen)
+        if self.angle <= 0:
+            rotated_gun_screen = pygame.transform.rotate(gun_screen, 270 - self.angle * 57.3)
+        else:
+            rotated_gun_screen = pygame.transform.rotate(gun_screen, 90 - self.angle * 57.3)
         new_rect = rotated_gun_screen.get_rect(center=gun_screen.get_rect(topleft=(self.x, self.y)).center)
         screen.blit(rotated_gun_screen, new_rect.topleft)
 
@@ -217,9 +230,6 @@ class Gun:
         if self.f2_on:
             if self.f2_power < 150:
                 self.f2_power += 1
-            self.color = RED
-        else:
-            self.color = GREY
 
     def move(self, event_move):
         if event_move.type == pygame.KEYDOWN:
@@ -239,20 +249,23 @@ class Gun:
 
 
 class AntiAirGun(Gun):
-    def __init__(self, x=20, y=500):
+    def __init__(self, x=20, y=475):
         super().__init__(x, y)
         self.f2_power = 50
 
     # anti-air-gun = aag
-    def draw(self):
-
-        aag_screen = pygame.Surface((self.width, 2 * self.height))
-        aag_screen.set_colorkey(BLACK)
-        pygame.draw.rect(aag_screen, self.color, (0, int(self.height / 2), self.width, self.height))
-        pygame.draw.circle(aag_screen, GREEN, (self.width - 10, self.height), 12)
-        rotated_aag_screen = pygame.transform.rotate(aag_screen, 180 - self.an * 57.7)
-        new_rect = rotated_aag_screen.get_rect(center=aag_screen.get_rect(topleft=(self.x, self.y)).center)
-        screen.blit(rotated_aag_screen, new_rect.topleft)
+    def _gun_tower(self, tower_screen):
+        pygame.draw.rect(tower_screen, GREY,
+                         (int(self.width / 2) + int(self.width / 15), 0, int(self.width / 10), int(self.height / 2)))
+        pygame.draw.rect(tower_screen, GREY,
+                         (int(self.width / 2) - int(self.width / 15) - int(self.width / 10), 0, int(self.width / 10),
+                          int(self.height / 2)))
+        pygame.draw.circle(tower_screen, DARKGREEN, (int(self.width / 2), int(self.height / 2)),
+                           int((self.height + self.width) / 10))
+        pygame.draw.rect(tower_screen, DARKGREEN, (
+            int(self.width / 2 - (self.height + self.width) / 10), int(self.height / 2),
+            int(2 * (self.height + self.width) / 10),
+            int((self.width + self.height) / 10)))
 
     def fire2_end(self, event_gun, extraballs, extrabullet):
         """Выстрел мячом.
@@ -264,10 +277,11 @@ class AntiAirGun(Gun):
 
         extrabullet += 1
         for i in range(10):
-            new_ball = Ball(screen, self.x + random.randint(-2, 2), self.y + random.randint(-10, 10), 5)
-            self.an = math.atan2((event_gun.pos[1] - new_ball.y), (event_gun.pos[0] - new_ball.x))
-            new_ball.vx = self.f2_power * math.cos(self.an) * random.randint(1, 3)
-            new_ball.vy = - self.f2_power * math.sin(self.an) * random.randint(1, 3)
+            new_ball = Ball(screen, self.x + int(self.width / 2) + random.randint(-2, 2),
+                            self.y + int(self.height / 3) + random.randint(-10, 10), 5)
+            self.angle = math.atan2((event_gun.pos[1] - new_ball.y), (event_gun.pos[0] - new_ball.x))
+            new_ball.vx = self.f2_power * math.cos(self.angle) * random.randint(1, 3)
+            new_ball.vy = - self.f2_power * math.sin(self.angle) * random.randint(1, 3)
             extraballs.append(new_ball)
         self.f2_on = 0
         self.f2_power = 50
@@ -372,11 +386,11 @@ pygame.time.set_timer(pygame.USEREVENT + 1, 5000)
 clock = pygame.time.Clock()
 tank = AntiAirGun()
 minion = Minion()
+finished = False
+
 for amount_of_targets in range(15):
     target = Target()
     targets.append(target)
-
-finished = False
 
 while not finished:
     screen.fill(WHITE)
@@ -391,7 +405,7 @@ while not finished:
         target.move()
     pygame.display.update()
     clock.tick(FPS)
-    if points <= 0:
+    if points <= 0 or points >= 50:
         finished = True
     for event in pygame.event.get():
         tank.move(event)
@@ -414,7 +428,7 @@ while not finished:
             points -= 2
             tank.growth = 0
         elif event.type == pygame.MOUSEMOTION:
-            tank.targetting(event)
+            tank.targeting(event)
 
     for ball in balls:
         ball.move()
