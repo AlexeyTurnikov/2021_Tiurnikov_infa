@@ -42,16 +42,18 @@ def text():
     screen.blit(words2, place2)
 
 
-def lose_text():
+def win_or_lose_text(winlose):
+    """
+    Функция, отвечающая за текст при победе или проигрыше
+    Если winlose == 1, то победа
+    Если winlose == 0, то проигрыш
+    """
+    if winlose == 0:
+        phrase = "Вы проиграли"
+    else:
+        phrase = "Вы выиграли"
     font = pygame.font.SysFont('Arial', 32)
-    words = font.render("Вы проиграли", True, (0, 0, 0))
-    place = words.get_rect(center=(WIDTH / 2, HEIGHT / 2))
-    screen.blit(words, place)
-
-
-def win_text():
-    font = pygame.font.SysFont('Arial', 32)
-    words = font.render("Вы выиграли", True, (0, 0, 0))
+    words = font.render(phrase, True, (0, 0, 0))
     place = words.get_rect(center=(WIDTH / 2, HEIGHT / 2))
     screen.blit(words, place)
 
@@ -181,6 +183,14 @@ class Gun:
             self.angle = math.atan(
                 (event_target.pos[1] - (self.y + self.height / 2)) / (event_target.pos[0] - (self.x + self.width / 2)))
 
+    def _base_gun_tower(self, tower_screen):
+        pygame.draw.circle(tower_screen, DARKGREEN, (int(self.width / 2), int(self.height / 2)),
+                           int((self.height + self.width) / 10))
+        pygame.draw.rect(tower_screen, DARKGREEN, (
+            int(self.width / 2 - (self.height + self.width) / 10), int(self.height / 2),
+            int(2 * (self.height + self.width) / 10),
+            int((self.width + self.height) / 10)))
+
     def _gun_tower(self, tower_screen):
         pygame.draw.rect(tower_screen, GREY, (int(self.width / 2), 0, int(self.width / 10), int(self.height / 2)))
         pygame.draw.rect(tower_screen, GREY,
@@ -191,12 +201,7 @@ class Gun:
         pygame.draw.polygon(tower_screen, DARKGREY,
                             [(int(self.width / 2 + 2 * self.width / 10), 0), (int(self.width / 2 + self.width / 10), 0),
                              (int(self.width / 2 + self.width / 10), int(self.height / 10))])
-        pygame.draw.circle(tower_screen, DARKGREEN, (int(self.width / 2), int(self.height / 2)),
-                           int((self.height + self.width) / 10))
-        pygame.draw.rect(tower_screen, DARKGREEN, (
-            int(self.width / 2 - (self.height + self.width) / 10), int(self.height / 2),
-            int(2 * (self.height + self.width) / 10),
-            int((self.width + self.height) / 10)))
+        self._base_gun_tower(tower_screen)
 
     def draw(self):
         """
@@ -260,12 +265,7 @@ class AntiAirGun(Gun):
         pygame.draw.rect(tower_screen, GREY,
                          (int(self.width / 2) - int(self.width / 15) - int(self.width / 10), 0, int(self.width / 10),
                           int(self.height / 2)))
-        pygame.draw.circle(tower_screen, DARKGREEN, (int(self.width / 2), int(self.height / 2)),
-                           int((self.height + self.width) / 10))
-        pygame.draw.rect(tower_screen, DARKGREEN, (
-            int(self.width / 2 - (self.height + self.width) / 10), int(self.height / 2),
-            int(2 * (self.height + self.width) / 10),
-            int((self.width + self.height) / 10)))
+        self._base_gun_tower(tower_screen)
 
     def fire2_end(self, event_gun, extraballs, extrabullet):
         """Выстрел мячом.
@@ -312,23 +312,23 @@ class Target:
         self.r = random.randint(10, 50)
         self.color = random.choice(GAME_COLORS)
 
-    def move(self):
+    def move(self, minx, maxx, miny, maxy, timer):
         """
         Функция, отвечающая за движение цели.
         """
         pygame.draw.circle(screen, self.color, (self.x, self.y), self.r)
-        if self.i % 15 == 0:
-            if self.x <= 100 or self.x >= WIDTH - 50:
+        if self.i % timer == 0:
+            if self.x <= minx or self.x >= maxx:
                 self.leftrightmovement += 1
-            if self.y <= 50 or self.y >= HEIGHT - 120:
+            if self.y <= miny or self.y >= maxy:
                 self.updownmovement += 1
         if self.leftrightmovement % 2 == 0:
             self.x += self.speed
-        if self.leftrightmovement % 2 == 1:
+        else:
             self.x -= self.speed
         if self.updownmovement % 2 == 0:
             self.y += self.speed
-        if self.updownmovement % 2 == 1:
+        else:
             self.y -= self.speed
         self.i += 1
 
@@ -341,7 +341,7 @@ class Bomb(Target):
         self.image_bomb = pygame.image.load("bomb.png")
         self.rect_bomb = self.image_bomb.get_rect(center=(self.x, self.y))
 
-    def move(self):
+    def movement(self):
         self.y += self.speed
         screen.blit(self.image_bomb, (self.x, self.y))
 
@@ -359,19 +359,13 @@ class Minion(Target):
         super().__init__()
         self.x = x
         self.y = y
+        self.r = 0
         self.image_minion = pygame.image.load("minion.jpg")
         self.rect_minion = self.image_minion.get_rect(center=(self.x, self.y))
         self.image_minion.set_colorkey(WHITE)
 
-    def move(self):
-        if self.i % 15 == 0:
-            if self.x <= 25 or self.x >= WIDTH - 125:
-                self.leftrightmovement += 1
-        if self.leftrightmovement % 2 == 0:
-            self.x += self.speed
-        if self.leftrightmovement % 2 == 1:
-            self.x -= self.speed
-        self.i += 1
+    def move(self, minx, maxx, miny, maxy, timer):
+        super().move(minx, maxx, miny, maxy, timer)
         screen.blit(self.image_minion, (self.x, self.y))
 
     def spawn(self):
@@ -396,13 +390,13 @@ while not finished:
     screen.fill(WHITE)
     text()
     tank.draw()
-    minion.move()
+    minion.move(25, WIDTH - 125, 45, 55, 1)
     for bomber in bombs:
-        bomber.move()
+        bomber.movement()
     for ball in balls:
         ball.draw()
     for target in targets:
-        target.move()
+        target.move(100, WIDTH - 50, 50, HEIGHT - 120, 15)
     pygame.display.update()
     clock.tick(FPS)
     if points <= 0 or points >= 50:
@@ -446,14 +440,15 @@ while not finished:
                 points += 10
                 bomber.boom()
     tank.power_up()
+
 finished = False
 if quit_game != 1:
     screen.fill(WHITE)
     while not finished:
         if points <= 0:
-            lose_text()
+            win_or_lose_text(0)
         if points >= 50:
-            win_text()
+            win_or_lose_text(1)
         pygame.display.update()
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
